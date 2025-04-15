@@ -13,12 +13,29 @@ struct VideoPlayerView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
+            playerLayer
+            closeButton
+            errorOverlay
+        }
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                withAnimation { viewModel.showCloseButton = true }
+                viewModel.scheduleAutoHide()
+            }
+        )
+        .offset(x: dragOffset.width, y: dragOffset.height)
+        .background(Color.black)
+        .gesture(dragToDismissGesture)
+    }
+}
+
+// MARK: - View Components
+
+private extension VideoPlayerView {
+    var playerLayer: some View {
+        Group {
             if let player = viewModel.player {
                 VideoPlayer(player: player)
-                    .onTapGesture {
-                        withAnimation { viewModel.showCloseButton = true }
-                        viewModel.scheduleAutoHide()
-                    }
                     .ignoresSafeArea()
             } else {
                 ProgressView("Loading...")
@@ -26,22 +43,33 @@ struct VideoPlayerView: View {
                     .background(Color.black)
                     .ignoresSafeArea()
             }
+        }
+    }
 
+    var closeButton: some View {
+        Group {
             if viewModel.showCloseButton {
                 Button(action: {
                     dismiss()
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 30))
-                        .padding()
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 40, height: 40)
                         .foregroundColor(.white)
                         .background(Color.black.opacity(0.5))
                         .clipShape(Circle())
                 }
+                .contentShape(Circle())
+                .buttonStyle(.plain)
                 .transition(.opacity)
                 .padding()
             }
+        }
+    }
 
+    var errorOverlay: some View {
+        Group {
             if let error = viewModel.errorMessage {
                 VStack {
                     Spacer()
@@ -52,19 +80,18 @@ struct VideoPlayerView: View {
                 }
             }
         }
-        .offset(x: dragOffset.width, y: dragOffset.height)
-        .background(Color.black)
-        .gesture(
-            DragGesture()
-                .onChanged { dragOffset = $0.translation }
-                .onEnded { value in
-                    let threshold: CGFloat = 100
-                    if abs(value.translation.width) > threshold || abs(value.translation.height) > threshold {
-                        dismiss()
-                    } else {
-                        withAnimation { dragOffset = .zero }
-                    }
+    }
+
+    var dragToDismissGesture: some Gesture {
+        DragGesture()
+            .onChanged { dragOffset = $0.translation }
+            .onEnded { value in
+                let threshold: CGFloat = 100
+                if abs(value.translation.width) > threshold || abs(value.translation.height) > threshold {
+                    dismiss()
+                } else {
+                    withAnimation { dragOffset = .zero }
                 }
-        )
+            }
     }
 }

@@ -12,21 +12,42 @@ struct VideoListView: View {
 
     var body: some View {
         NavigationStack {
-            List(viewModel.files) { file in
-                Button(file.name) {
-                    selectedFile = file
+            content
+                .navigationTitle("Muvia Library")
+                .task { await viewModel.fetchFiles() }
+                .fullScreenCover(item: $selectedFile) { file in
+                    VideoPlayerView(
+                        url: viewModel.videoURL(for: file),
+                        token: viewModel.tokenHeader()
+                    )
                 }
+        }
+    }
+}
+
+// MARK: - View Composition
+
+private extension VideoListView {
+    @ViewBuilder
+    var content: some View {
+        VStack(spacing: 0) {
+            fileList
+            errorView
+        }
+    }
+
+    var fileList: some View {
+        List(viewModel.files) { file in
+            Button(file.name) {
+                selectedFile = file
             }
-            .navigationTitle("Muvia Library")
-            .task {
-                await viewModel.fetchFiles()
-            }
-            .fullScreenCover(item: $selectedFile) { file in
-                VideoPlayerView(
-                    url: viewModel.videoURL(for: file),
-                    token: viewModel.tokenHeader()
-                )
-            }
+        }
+    }
+
+    @ViewBuilder
+    var errorView: some View {
+        if let error = viewModel.errorMessage {
+            InlineErrorView(message: error)
         }
     }
 }

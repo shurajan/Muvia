@@ -9,43 +9,57 @@ struct MuviaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if let host = finder.resolvedHost {
-                    VideoListView(host: host)
-                } else if fallbackTriggered {
-                    VStack(spacing: 20) {
-                        Text("Server not found")
-                            .font(.headline)
+            content
+                .preferredColorScheme(nil)
+        }
+    }
+}
 
-                        TextField("IP Address", text: $manualHost)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 250)
+// MARK: - View Composition
 
-                        TextField("Port", text: $manualPort)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 250)
+private extension MuviaApp {
+    @ViewBuilder
+    var content: some View {
+        if let host = finder.resolvedHost {
+            VideoListView(host: host)
+        } else if fallbackTriggered {
+            manualInputView
+        } else {
+            searchProgressView
+        }
+    }
 
-                        Button("Connect") {
-                            finder.resolvedHost = "\(manualHost):\(manualPort)"
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding()
-                } else {
-                    ProgressView("Searching for MediaFS…")
-                        .task {
-                            finder.startSearching()
+    var manualInputView: some View {
+        VStack(spacing: 20) {
+            Text("Server not found")
+                .font(.headline)
 
-                            // fallback через 5 секунд на ручной ввод
-                            try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
-                            if finder.resolvedHost == nil {
-                                fallbackTriggered = true
-                                print("⚠️ Bonjour fallback: manual input required")
-                            }
-                        }
+            TextField("IP Address", text: $manualHost)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(width: 250)
+
+            TextField("Port", text: $manualPort)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(width: 250)
+
+            Button("Connect") {
+                finder.resolvedHost = "\(manualHost):\(manualPort)"
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+
+    var searchProgressView: some View {
+        ProgressView("Searching for MediaFS…")
+            .task {
+                finder.startSearching()
+
+                try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+                if finder.resolvedHost == nil {
+                    fallbackTriggered = true
+                    print("⚠️ Bonjour fallback: manual input required")
                 }
             }
-            .preferredColorScheme(nil)
-        }
     }
 }
