@@ -5,7 +5,7 @@
 //  Created by Alexander Bralnin on 15.04.2025.
 //
 
-import AVFoundation
+/*import AVFoundation
 
 class Context: NSObject {
     static let shared = Context()
@@ -26,4 +26,4 @@ class Context: NSObject {
             }
         }
     }
-}
+}*/
